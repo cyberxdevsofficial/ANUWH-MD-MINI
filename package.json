@@ -1,18 +1,18 @@
 {
-  "name": "bugbot-v3",
+  "name": "mini",
   "version": "1.0.0",
   "main": "bot.js",
   "scripts": {
-    "start": "pm2 start index.js --deep-monitoring --attach --name UDMODZ",
-    "stop": "pm2 stop UDMODZ",
-    "restart": "pm2 restart UDMODZ"
+    "start": "pm2 start index.js --deep-monitoring --attach --name anuga",
+    "stop": "pm2 stop anuaa",
+    "restart": "pm2 restart anuga"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "baileys-pro" : "npm:baileys-pro",
+    "baileys-pro" : "npm:baileys-dtz",
     "axios": "latest",
     "megajs": "latest",
     "pm2": "latest",
