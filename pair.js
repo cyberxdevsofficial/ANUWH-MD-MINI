@@ -90,10 +90,10 @@ function generateButtonMessage(content, buttons, image = null) {
 }
 //=======================================
 const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN
+    auth: process.env.GITHUB_TOKEN;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
 });
-const owner = process.env.GITHUB_REPO_OWNER;
-const repo = process.env.GITHUB_REPO_NAME;
+const owner = process.env.GITHUB_REPO_OWNER;Anuga123
+const repo = process.env.GITHUB_REPO_NAME;ANUWHMD
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
