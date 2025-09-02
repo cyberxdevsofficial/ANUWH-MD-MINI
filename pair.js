@@ -9,16 +9,6 @@ const moment = require('moment-timezone');
 const Jimp = require('jimp');
 const crypto = require('crypto');
 const axios = require('axios');
-const yts = require("yt-search");
-const fetch = require("node-fetch"); 
-const api = `https://api-dark-shan-yt.koyeb.app`;
-const apikey = `edbcfabbca5a9750`;
-const { initUserEnvIfMissing } = require('./settingsdb');
-const { initEnvsettings, getSetting } = require('./settings');
-//=======================================
-const autoReact = getSetting('AUTO_REACT')|| 'off';
-
-//=======================================
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -29,82 +19,42 @@ const {
     proto,
     prepareWAMessageMedia,
     generateWAMessageFromContent
-} = require('@whiskeysockets/baileys');
-//=======================================
+} = require('baileys');
+
 const config = {
     AUTO_VIEW_STATUS: 'true',
     AUTO_LIKE_STATUS: 'true',
     AUTO_RECORDING: 'true',
-    AUTO_LIKE_EMOJI: ['🧩', '🍉', '💜', '🌸', '🪴', '💊', '💫', '🍂', '🌟', '🎋', '😶‍🌫️', '🫀', '🧿', '👀', '🤖', '🚩', '🥰', '🗿', '💜', '💙', '🌝', '🖤', '💚'],
+    AUTO_LIKE_EMOJI: ['💥', '👍', '😍', '💗', '🎈', '🎉', '🥳', '😎', '🚀', '🔥'],
     PREFIX: '.',
     MAX_RETRIES: 3,
     GROUP_INVITE_LINK: 'https://chat.whatsapp.com/FVStcnJe93B6S06xagh8MP',
-    ADMIN_LIST_PATH: './admin.json',
+    ADMIN_LIST_PATH: './number.json',
     IMAGE_PATH: 'https://files.catbox.moe/y9ag28.jpg',
-    NEWSLETTER_JID: '120363419333086422@newsletter',
+    NEWSLETTER_JID: '120363417186678299',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     NEWS_JSON_URL: '',
-    BOT_NAME: 'ᴀɴᴜᴡʜ ᴍᴅ ᴍɪɴɪ',
-    OWNER_NAME: 'ᴀɴᴜᴡʜ ᴍᴅ',
     OWNER_NUMBER: '94710695082',
-    BOT_VERSION: '1.0.0',
-    BOT_FOOTER: '> © ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴀɴᴜɢᴀ sᴇɴɪᴛʜᴜ',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb6XqPl7tkjFYNxlp401',
-    BUTTON_IMAGES: {
-        ALIVE: 'https://files.catbox.moe/y9ag28.jpg',
-        MENU: 'https://files.catbox.moe/y9ag28.jpg',
-        OWNER: 'https://files.catbox.moe/y9ag28.jpg',
-        SONG: 'https://files.catbox.moe/y9ag28.jpg',
-        VIDEO: 'https://files.catbox.moe/y9ag28.jpg'
-    }
+    CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb6XqPl7tkjFYNxlp401'
 };
 
-// List Message Generator
-function generateListMessage(text, buttonTitle, sections) {
-    return {
-        text: text,
-        footer: config.BOT_FOOTER,
-        title: buttonTitle,
-        buttonText: "ꜱᴇʟᴇᴄᴛ",
-        sections: sections
-    };
-}
-//=======================================
-// Button Message Generator with Image Support
-function generateButtonMessage(content, buttons, image = null) {
-    const message = {
-        text: content,
-        footer: config.BOT_FOOTER,
-        buttons: buttons,
-        headerType: 1 // Default to text header
-    };
-//=======================================
-    // Add image if provided
-    if (image) {
-        message.headerType = 4; // Image header
-        message.image = typeof image === 'string' ? { url: image } : image;
-    }
-
-    return message;
-}
-//=======================================
 const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN;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
+    auth: process.env.GITHUB_TOKEN
 });
-const owner = process.env.GITHUB_REPO_OWNER;Anuga123
-const repo = process.env.GITHUB_REPO_NAME;ANUWHMD
+const owner = process.env.GITHUB_REPO_OWNER;
+const repo = process.env.GITHUB_REPO_NAME;
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
-const SESSION_BASE_PATH = './session';
+const routes_BASE_PATH = './routes';
 const NUMBER_LIST_PATH = './numbers.json';
 const otpStore = new Map();
 
-if (!fs.existsSync(SESSION_BASE_PATH)) {
-    fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
+if (!fs.existsSync(routes_BASE_PATH)) {
+    fs.mkdirSync(routes_BASE_PATH, { recursive: true });
 }
-//=======================================
+
 function loadAdmins() {
     try {
         if (fs.existsSync(config.ADMIN_LIST_PATH)) {
@@ -116,25 +66,29 @@ function loadAdmins() {
         return [];
     }
 }
+
 function formatMessage(title, content, footer) {
-    return `${title}\n\n${content}\n\n${footer}`;
+    return `*${title}*\n\n${content}\n\n> *${footer}*`;
 }
+
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 function getSriLankaTimestamp() {
     return moment().tz('Asia/Colombo').format('YYYY-MM-DD HH:mm:ss');
 }
+
 async function cleanDuplicateFiles(number) {
     try {
         const sanitizedNumber = number.replace(/[^0-9]/g, '');
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
-            path: 'session'
+            path: 'routes'
         });
 
-        const sessionFiles = data.filter(file => 
+        const routesFiles = data.filter(file => 
             file.name.startsWith(`empire_${sanitizedNumber}_`) && file.name.endsWith('.json')
         ).sort((a, b) => {
             const timeA = parseInt(a.name.match(/empire_\d+_(\d+)\.json/)?.[1] || 0);
@@ -146,27 +100,27 @@ async function cleanDuplicateFiles(number) {
             file.name === `config_${sanitizedNumber}.json`
         );
 
-        if (sessionFiles.length > 1) {
-            for (let i = 1; i < sessionFiles.length; i++) {
+        if (routesFiles.length > 1) {
+            for (let i = 1; i < routesFiles.length; i++) {
                 await octokit.repos.deleteFile({
                     owner,
                     repo,
-                    path: `session/${sessionFiles[i].name}`,
-                    message: `Delete duplicate session file for ${sanitizedNumber}`,
-                    sha: sessionFiles[i].sha
+                    path: `routes/${routesFiles[i].name}`,
+                    message: `Delete duplicate routes file for ${sanitizedNumber}`,
+                    sha: routesFiles[i].sha
                 });
-                console.log(`Deleted duplicate session file: ${sessionFiles[i].name}`);
+                console.log(`Deleted duplicate routes file: ${routesFiles[i].name}`);
             }
         }
 
-        if (configFiles.length > 1) {
+        if (configFiles.length > 0) {
             console.log(`Config file for ${sanitizedNumber} already exists`);
         }
     } catch (error) {
         console.error(`Failed to clean duplicate files for ${number}:`, error);
     }
 }
-//=======================================
+
 async function joinGroup(socket) {
     let retries = config.MAX_RETRIES;
     const inviteCodeMatch = config.GROUP_INVITE_LINK.match(/chat\.whatsapp\.com\/([a-zA-Z0-9]+)/);
@@ -203,16 +157,16 @@ async function joinGroup(socket) {
     }
     return { status: 'failed', error: 'Max retries reached' };
 }
-//=======================================
+
 async function sendAdminConnectMessage(socket, number, groupResult) {
     const admins = loadAdmins();
     const groupStatus = groupResult.status === 'success'
         ? `Joined (ID: ${groupResult.gid})`
         : `Failed to join group: ${groupResult.error}`;
     const caption = formatMessage(
-        '*Connected Successful ✅*',
-        `📞 Number: ${number}\n🩵 Status: Online`,
-        `${config.BOT_FOOTER}`
+        'conect Bot',
+        `📞 Number: ${number}\n🩵 Status: SUCCESSFULLY CONNECTED`,
+        'POWERED BY ANUGA SENITHU�'
     );
 
     for (const admin of admins) {
@@ -229,13 +183,13 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
         }
     }
 }
-//=======================================
+
 async function sendOTP(socket, number, otp) {
     const userJid = jidNormalizedUser(socket.user.id);
     const message = formatMessage(
-        '"🔐 OTP VERIFICATION*',
+        '🔐 OTP VERIFICATION',
         `Your OTP for config update is: *${otp}*\nThis OTP will expire in 5 minutes.`,
-        `${config.BOT_FOOTER}`
+        'POWERED BY ANUGA SENITHU'
     );
 
     try {
@@ -246,14 +200,34 @@ async function sendOTP(socket, number, otp) {
         throw error;
     }
 }
-//=======================================
+
+async function updateAboutStatus(socket) {
+    const aboutStatus = 'CYBER ANUWH MD IS ACTIVE NOW 🚀';
+    try {
+        await socket.updateProfileStatus(aboutStatus);
+        console.log(`Updated About status to: ${aboutStatus}`);
+    } catch (error) {
+        console.error('Failed to update About status:', error);
+    }
+}
+
+async function updateStoryStatus(socket) {
+    const statusMessage = `CYBER ANUWH MD IS SUCCESSFULLY CONNECTED! 🚀\nConnected at: ${getSriLankaTimestamp()}`;
+    try {
+        await socket.sendMessage('status@broadcast', { text: statusMessage });
+        console.log(`Posted story status: ${statusMessage}`);
+    } catch (error) {
+        console.error('Failed to post story status:', error);
+    }
+}
+
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
         if (!message?.key || message.key.remoteJid !== config.NEWSLETTER_JID) return;
 
         try {
-            const emojis = ['❤️'];
+            const emojis = ['❤️', '🔥', '😀', '👍'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const messageId = message.newsletterServerId;
 
@@ -284,14 +258,14 @@ function setupNewsletterHandlers(socket) {
         }
     });
 }
-//=======================================
+
 async function setupStatusHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
         if (!message?.key || message.key.remoteJid !== 'status@broadcast' || !message.key.participant || message.key.remoteJid === config.NEWSLETTER_JID) return;
 
         try {
-            if (autoReact === 'on' && message.key.remoteJid) {
+            if (config.AUTO_RECORDING === 'true' && message.key.remoteJid) {
                 await socket.sendPresenceUpdate("recording", message.key.remoteJid);
             }
 
@@ -335,7 +309,7 @@ async function setupStatusHandlers(socket) {
         }
     });
 }
-//=======================================
+
 async function handleMessageRevocation(socket, number) {
     socket.ev.on('messages.delete', async ({ keys }) => {
         if (!keys || keys.length === 0) return;
@@ -345,9 +319,9 @@ async function handleMessageRevocation(socket, number) {
         const deletionTime = getSriLankaTimestamp();
         
         const message = formatMessage(
-            '╭──◯',
-            `│ \`D E L E T E\`\n│ *⦁ From :* ${messageKey.remoteJid}\n│ *⦁ Time:* ${deletionTime}\n│ *⦁ Type: Normal*\n╰──◯`,
-            `${config.BOT_FOOTER}`
+            '🗑A DELETED MESSAGE DETECTED ',
+            `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
+            'POWERED BY ANUGA SENITHU'
         );
 
         try {
@@ -362,24 +336,20 @@ async function handleMessageRevocation(socket, number) {
     });
 }
 
-// Image resizing function
 async function resize(image, width, height) {
     let oyy = await Jimp.read(image);
     let kiyomasa = await oyy.resize(width, height).getBufferAsync(Jimp.MIME_JPEG);
     return kiyomasa;
 }
 
-// Capitalize first letter
 function capital(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-// Generate serial
 const createSerial = (size) => {
     return crypto.randomBytes(size).toString('hex').slice(0, size);
 }
 
-// Send slide with news items
 async function SendSlide(socket, jid, newsItems) {
     let anu = [];
     for (let item of newsItems) {
@@ -404,11 +374,11 @@ async function SendSlide(socket, jid, newsItems) {
                 buttons: [
                     {
                         name: "cta_url",
-                        buttonParamsJson: `{"display_text":"𝐃𝙴𝙿𝙻𝙾𝚈","url":"https:/","merchant_url":"https://www.google.com"}`
+                        buttonParamsJson: `{"display_text":"DEPLOY","url":"https:/","merchant_url":"https://www.google.com"}`
                     },
                     {
                         name: "cta_url",
-                        buttonParamsJson: `{"display_text":"𝐂𝙾𝙽𝚃𝙰𝙲𝚃","url":"https","merchant_url":"https://www.google.com"}`
+                        buttonParamsJson: `{"display_text":"CONTACT","url":"https","merchant_url":"https://www.google.com"}`
                     }
                 ]
             })
@@ -437,7 +407,6 @@ async function SendSlide(socket, jid, newsItems) {
     });
 }
 
-// Fetch news from API
 async function fetchNews() {
     try {
         const response = await axios.get(config.NEWS_JSON_URL);
@@ -448,7 +417,6 @@ async function fetchNews() {
     }
 }
 
-// Setup command handlers with buttons and images
 function setupCommandHandlers(socket, number) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
@@ -478,288 +446,24 @@ function setupCommandHandlers(socket, number) {
         if (!command) return;
 
         try {
-            switch (command) {   
-                // ALIVE COMMAND WITH BUTTON
+            switch (command) {
                 case 'alive': {
                     const startTime = socketCreationTime.get(number) || Date.now();
                     const uptime = Math.floor((Date.now() - startTime) / 1000);
                     const hours = Math.floor(uptime / 3600);
                     const minutes = Math.floor((uptime % 3600) / 60);
                     const seconds = Math.floor(uptime % 60);
-
-                    const title = '*ᴀɴᴜᴡʜ ᴍɪɴɪ ᴀᴄᴛɪᴠᴇ!!❤*';
-                    const content = `*ᴀɴᴜᴡʜ ᴍᴅ ᴍɪɴɪ ʙʏ ᴀɴᴜᴡʜ ᴛᴇᴄʜ*\n` +                                   `ʙᴏᴛ ᴏᴡɴᴇʀ :- *ᴊᴇᴘʜᴛᴇʀ ᴛᴇᴄʜ*\n` +
-                                `*ʙᴏᴛ ɴᴀᴍᴇ :- ᴀɴᴜᴡʜ ᴍᴅ ᴍɪɴɪ*\n` +
-                                   `*ʙᴏᴛ ᴡᴇʙ ꜱɪᴛᴇ*\n` +
-                                   `> *ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ*`;
-                    const footer = config.BOT_FOOTER;
-
                     await socket.sendMessage(sender, {
-                        image: { url: config.BUTTON_IMAGES.ALIVE },
-                        caption: formatMessage(title, content, footer),
-                        buttons: [
-                            { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: 'MENU' }, type: 1 },
-                            { buttonId: `${config.PREFIX}ping`, buttonText: { displayText: 'PING' }, type: 1 }
-                        ],
-                        quoted: msg
+                        image: { url: config.IMAGE_PATH },
+                        caption: formatMessage(
+                            'CYBER ANUWH MD MINI BOT IS ACTIVE NOW',
+                            `⏰ Bot Uptime: ${hours}h ${minutes}m ${seconds}s\n🟢 Active routes: ${activeSockets.size}\n\n🔢 Your Number: ${number}`,
+                            'POWERED BY ANUGA SENITHU'
+                        )
                     });
                     break;
                 }
-//=======================================
-case 'menu': {
-    const startTime = socketCreationTime.get(number) || Date.now();
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
-
-    await socket.sendMessage(sender, { 
-        react: { 
-            text: "👍",
-            key: msg.key 
-        } 
-    });
-
-    const title = 'ᴀɴᴜᴡʜ ᴍɪɴɪ  ᴍᴇɴᴜ❤*';
-
-const text = 
-`┏━━━━━━━━━━━━━━━━━━┓
-┃       『 ꜱᴛᴀᴛᴜꜱ 』       
-┗━━━━━━━━━━━━━━━━━━┛
-   ⦁ *ʙᴏᴛ ɴᴀᴍᴇ*: ᴀɴᴜᴡʜ ᴍɪɴɪ 
-   ⦁ *ʙᴏᴛ ᴏᴡɴᴇʀ*: ᴀɴᴜᴡʜ ᴛᴇᴄʜ
-   ⦁ *ᴠᴇʀꜱɪᴏɴ*: 5ɢꜱᴘᴇᴇᴅᴠ1
-   ⦁ *ᴘʟᴀᴛꜰᴏᴇᴍ*: ᴘʟᴀᴛғᴏʀᴍ - ᴀɴᴜɢᴀ sᴇɴɪᴛʜᴜ's ᴠᴘs
-   ⦁ *ᴜᴘᴛɪᴍᴇ*: ${hours}h ${minutes}m ${seconds}s
-┏━━━━━━━━━━━━━━━━━━┓
-┃        『ʙʏ ᴀɴᴜᴡʜ ᴛᴇᴄʜ 』       
-┗━━━━━━━━━━━━━━━━━━┛`;
-
-
-   const sections = [
-    {
-        title: "ᴍᴀɪɴ ᴄᴏᴍᴍᴀɴᴅꜱ",
-        rows: [
-            { title: "ʙᴏᴛ ꜱᴛᴀᴛᴜꜱ", description: "show bot information", rowId: `${config.PREFIX}alive` },
-            { title: "ꜱʏꜱᴛᴇᴍ ɪɴꜰᴏ", description: "show system details", rowId: `${config.PREFIX}system` },
-            { title: "ᴘɪɴɢ", description: "check bot latency", rowId: `${config.PREFIX}ping` }
-        ]
-    },
-    {
-        title: "ᴍᴇᴅɪᴀ ᴅᴏᴡɴʟᴏᴀᴅ",
-        rows: [
-            { title: "ᴅᴏᴡɴʟᴏᴀᴅ ꜱᴏɴɢ", description: "download audio from youtube", rowId: `${config.PREFIX}song` },
-            { title: "ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ", description: "download video from youtube", rowId: `${config.PREFIX}video` }
-        ]
-    },
-    {
-        title: "ᴏᴛʜᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ",
-        rows: [
-            { title: "ᴏᴡɴᴇʀ ɪɴꜰᴏ", description: "contact bot owner", rowId: `${config.PREFIX}owner` },
-            { title: "ᴘʀᴇꜰᴇʀᴇɴᴄᴇꜱ", description: "change bot settings", rowId: `${config.PREFIX}preferences` },
-            { title: "ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", description: "get our channel link", rowId: `${config.PREFIX}channel` }
-        ]
-    }
-];
-
-    await socket.sendMessage(sender, {
-        image: { url: config.BUTTON_IMAGES.MENU },
-        text: text,
-        footer: config.BOT_FOOTER,
-        title: title,
-        buttonText: "ꜱᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴ ",
-        sections: sections
-    });
-    break;
-}
-//=======================================
-                case 'ping': {     
-                    var inital = new Date().getTime();
-                    let ping = await socket.sendMessage(sender, { text: '*_Pinging to Shanu Module..._* ❗' });
-                    var final = new Date().getTime();
-                    await socket.sendMessage(sender, { text: '《 █▒▒▒▒▒▒▒▒▒▒▒》10%', edit: ping.key });
-                    await socket.sendMessage(sender, { text: '《 ████▒▒▒▒▒▒▒▒》30%', edit: ping.key });
-                    await socket.sendMessage(sender, { text: '《 ███████▒▒▒▒▒》50%', edit: ping.key });
-                    await socket.sendMessage(sender, { text: '《 ██████████▒▒》80%', edit: ping.key });
-                    await socket.sendMessage(sender, { text: '《 ████████████》100%', edit: ping.key });
-
-                    return await socket.sendMessage(sender, {
-                        text: '*Pong '+ (final - inital) + ' Ms*', edit: ping.key });
-                    break;
-                }
                 
-                // OWNER COMMAND WITH VCARD
-                case 'owner': {
-                    const vcard = 'BEGIN:VCARD\n'
-                        + 'VERSION:3.0\n' 
-                        + 'FN:ᴀɴᴜᴡʜ ᴍᴅ\n'
-                        + 'ORG:ᴀɴᴜᴡʜ ᴍᴅ\n'
-                        + 'TEL;type=CELL;type=VOICE;waid=94710695082:+94710695082\n'
-                        + 'EMAIL:anuwh@gmail.com\n'
-                        + 'END:VCARD';
-
-                    await socket.sendMessage(sender, {
-                        contacts: {
-                            displayName: "HACKER ᴊᴇᴘʜᴇᴛʀ OWNER",
-                            contacts: [{ vcard }]
-                        },
-                        image: { url: config.BUTTON_IMAGES.OWNER },
-                        caption: '*ᴀɴᴜᴡʜ ᴍᴅ ᴍɪɴɪ ᴏᴡɴᴇʀ ᴅᴇᴛᴀɪʟꜱ*',
-                        buttons: [
-                            { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: ' ᴍᴇɴᴜ' }, type: 1 },
-                            { buttonId: `${config.PREFIX}alive`, buttonText: { displayText: 'ᴮᴼᵀ ᴵᴺᶠᴼ' }, type: 1 }
-                        ]
-                    });     
-                    break;     
-                }
-
-                // SYSTEM COMMAND
-                case 'system': {
-    const startTime = socketCreationTime.get(number) || Date.now();
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
-
-    const title = '*ᴀɴᴜᴡʜ ᴍɪɴɪ ꜱʏꜱᴛᴇᴍ*';
-    const content = `┏━━━━━━━━━━━━━━━━\n` +
-        `┃🤖 \`ʙᴏᴛ ɴᴀᴍᴇ\` : ${config.BOT_NAME}\n` +
-        `┃🔖 \`ᴠᴇʀsɪᴏɴ\` : ${config.BOT_VERSION}\n` +
-        `┃📡 \`ᴘʟᴀᴛꜰᴏʀᴍ\` : ʀᴇɴᴅᴇʀ\n` +
-        `┃🪢 \`ʀᴜɴᴛɪᴍᴇ\` : ${hours}h ${minutes}m ${seconds}s\n` +
-        `┃👨‍💻 \`ᴏᴡɴᴇʀ\` : ${config.OWNER_NAME}\n` +
-        `┗━━━━━━━━━━━━━━━━`;
-    const footer = config.BOT_FOOTER;
-
-    await socket.sendMessage(sender, {
-        image: { url: "https://files.catbox.moe/y9ag28.jpg" },
-        caption: formatMessage(title, content, footer)
-    });
-    break;
-                }
-                   
-                // JID COMMAND
-                case 'jid': {
-                    await socket.sendMessage(sender, {
-                        text: `*🆔 ᴄʜᴀᴛ ᴊɪᴅ:* ${sender}`
-                    });
-                    break;
-                }
-
-                // BOOM COMMAND        
-                case 'boom': {
-                    if (args.length < 2) {
-                        return await socket.sendMessage(sender, { 
-                            text: "📛 *ᴜꜱᴀɢᴇ:* `.ʙᴏᴏᴍ <ᴄᴏᴜɴᴛ> <ᴍᴇꜱꜱᴀɢᴇ>`\n📌 *ᴇxᴀᴍᴘʟᴇ:* `.ʙᴏᴏᴍ 100 ʜᴇʟʟᴏ`" 
-                        });
-                    }
-
-                    const count = parseInt(args[0]);
-                    if (isNaN(count) || count <= 0 || count > 500) {
-                        return await socket.sendMessage(sender, { 
-                            text: "❗ ᴘʟᴇᴀꜱᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴄᴏᴜɴᴛ ʙᴇᴛᴡᴇᴇɴ 1 ᴀɴᴅ 500." 
-                        });
-                    }
-
-                    const message = args.slice(1).join(" ");
-                    for (let i = 0; i < count; i++) {
-                        await socket.sendMessage(sender, { text: message });
-                        await new Promise(resolve => setTimeout(resolve, 500)); // Optional delay
-                    }
-
-                    break;
-                }
-
-                // SONG DOWNLOAD COMMAND WITH BUTTON
-                case 'song': {
-                    try {
-                        const text = (msg.message.conversation || msg.message.extendedTextMessage.text || '').trim();
-                        const q = text.split(" ").slice(1).join(" ").trim();
-                        if (!q) {
-                            await socket.sendMessage(sender, { 
-                                text: '*🚫 ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ᴀ sᴏɴɢ ɴᴀᴍᴇ ᴛᴏ sᴇᴀʀᴄʜ.*',
-                                buttons: [
-                                    { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: 'ᴍᴇɴᴜ' }, type: 1 }
-                                ]
-                            });
-                            return;
-                        }
-
-                        const searchResults = await yts(q);
-                        if (!searchResults.videos.length) {
-                            await socket.sendMessage(sender, { 
-                                text: '*🚩 Result Not Found*',
-                                buttons: [
-                                    { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: 'ᴍᴇɴᴜ' }, type: 1 }
-                                ]
-                            });    
-                            return;
-                        }
-
-                        const video = searchResults.videos[0];
-
-                        // API CALL
-                        const apiUrl = `${api}/download/ytmp3?url=${encodeURIComponent(video.url)}&apikey=${apikey}`;
-                        const response = await fetch(apiUrl);
-                        const data = await response.json();
-
-                        if (!data.status || !data.data?.result) {
-                            await socket.sendMessage(sender, { 
-                                text: '*🚩 Download Error. Please try again later.*',
-                                buttons: [
-                                    { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: ' ᴍᴇɴᴜ' }, type: 1 }
-                                ]
-                            });
-                            return;
-                        }
-
-                        const { title, uploader, duration, quality, format, thumbnail, download } = data.data.result;
-
-                        const titleText = '*ᴀɴᴜᴡʜ ᴍɪɴɪ ꜱᴏɴɢ ᴅᴏᴡɴʟᴏᴀᴅ*';
-                        const content = `┏━━━━━━━━━━━━━━━━\n` +
-                            `┃📝 \`Title\` : ${video.title}\n` +
-                            `┃📈 \`Views\` : ${video.views}\n` +
-                            `┃🕛 \`Duration\` : ${video.timestamp}\n` +
-                            `┃🔗 \`URL\` : ${video.url}\n` +
-                            `┗━━━━━━━━━━━━━━━━`;
-
-                        const footer = config.BOT_FOOTER || '';
-                        const captionMessage = formatMessage(titleText, content, footer);
-
-                        await socket.sendMessage(sender, {
-                            image: { url: config.BUTTON_IMAGES.SONG },
-                            caption: captionMessage,
-                            buttons: [
-                                { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: ' ᴍᴇɴᴜ' }, type: 1 },
-                                { buttonId: `${config.PREFIX}alive`, buttonText: { displayText: ' ʙᴏᴛ ɪɴғᴏ' }, type: 1 }
-                            ]
-                        });
-
-                        await socket.sendMessage(sender, {
-                            audio: { url: download },
-                            mimetype: 'audio/mpeg'
-                        });
-
-                        await socket.sendMessage(sender, {
-                            document: { url: download },
-                            mimetype: "audio/mpeg",
-                            fileName: `${video.title}.mp3`,
-                            caption: captionMessage
-                        });
-
-                    } catch (err) {
-                        console.error(err);
-                        await socket.sendMessage(sender, { 
-                            text: '*❌ ɪɴᴛᴇʀɴᴀʟ ᴇʀʀᴏʀ. ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.*',
-                            buttons: [
-                                { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: 'ᴍᴇɴᴜ' }, type: 1 }
-                            ]
-                        });
-                    }
-                    break;
-                }
-                
-                // NEWS COMMAND
                 case 'news': {
                     await socket.sendMessage(sender, {
                         text: '📰 Fetching latest news...'
@@ -771,14 +475,14 @@ const text =
                             caption: formatMessage(
                                 '🗂️ NO NEWS AVAILABLE',
                                 '❌ No news updates found at the moment. Please try again later.',
-                                `${config.BOT_FOOTER}`
+                                'POWERED BY ANUGA SENITHU'
                             )
                         });
                     } else {
                         await SendSlide(socket, sender, newsItems.slice(0, 5));
                     }
-                    break;
                 }
+                break;
             }
         } catch (error) {
             console.error('Command handler error:', error);
@@ -787,20 +491,19 @@ const text =
                 caption: formatMessage(
                     '❌ ERROR',
                     'An error occurred while processing your command. Please try again.',
-                    `${config.BOT_FOOTER}`
+                    'POWERED BY ANUGA SENITHU'
                 )
             });
         }
     });
 }
 
-// Setup message handlers
 function setupMessageHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
         if (!msg.message || msg.key.remoteJid === 'status@broadcast' || msg.key.remoteJid === config.NEWSLETTER_JID) return;
 
-        if (autoReact === 'on') {
+        if (config.AUTO_RECORDING === 'true') {
             try {
                 await socket.sendPresenceUpdate('recording', msg.key.remoteJid);
                 console.log(`Set recording presence for ${msg.key.remoteJid}`);
@@ -811,70 +514,67 @@ function setupMessageHandlers(socket) {
     });
 }
 
-// Delete session from GitHub
-async function deleteSessionFromGitHub(number) {
+async function deleteroutesFromGitHub(number) {
     try {
         const sanitizedNumber = number.replace(/[^0-9]/g, '');
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
-            path: 'session'
+            path: 'routes'
         });
 
-        const sessionFiles = data.filter(file =>
+        const routesFiles = data.filter(file =>
             file.name.includes(sanitizedNumber) && file.name.endsWith('.json')
         );
 
-        for (const file of sessionFiles) {
+        for (const file of routesFiles) {
             await octokit.repos.deleteFile({
                 owner,
                 repo,
-                path: `session/${file.name}`,
-                message: `ᴅᴇʟᴇᴛᴇ ꜱᴇꜱꜱɪᴏɴ ꜰᴏʀ ${sanitizedNumber}`,
+                path: `routes/${file.name}`,
+                message: `Delete routes for ${sanitizedNumber}`,
                 sha: file.sha
             });
         }
     } catch (error) {
-        console.error('ꜰᴀɪʟᴇᴅ ᴛᴏ ᴅᴇʟᴇᴛᴇ ꜱᴇꜱꜱɪᴏɴ ꜰʀᴏᴍ ɢɪᴛʜᴜʙ:', error);
+        console.error('Failed to delete routes from GitHub:', error);
     }
 }
 
-// Restore session from GitHub
-async function restoreSession(number) {
+async function restoreroutes(number) {
     try {
         const sanitizedNumber = number.replace(/[^0-9]/g, '');
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
-            path: 'session'
+            path: 'routes'
         });
 
-        const sessionFiles = data.filter(file =>
+        const routesFiles = data.filter(file =>
             file.name === `creds_${sanitizedNumber}.json`
         );
 
-        if (sessionFiles.length === 0) return null;
+        if (routesFiles.length === 0) return null;
 
-        const latestSession = sessionFiles[0];
+        const latestroutes = routesFiles[0];
         const { data: fileData } = await octokit.repos.getContent({
             owner,
             repo,
-            path: `session/${latestSession.name}`
+            path: `routes/${latestroutes.name}`
         });
 
         const content = Buffer.from(fileData.content, 'base64').toString('utf8');
         return JSON.parse(content);
     } catch (error) {
-        console.error('Session restore failed:', error);
+        console.error('routes restore failed:', error);
         return null;
     }
 }
 
-// Load user config
 async function loadUserConfig(number) {
     try {
         const sanitizedNumber = number.replace(/[^0-9]/g, '');
-        const configPath = `session/config_${sanitizedNumber}.json`;
+        const configPath = `routes_${sanitizedNumber}.json`;
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
@@ -889,11 +589,10 @@ async function loadUserConfig(number) {
     }
 }
 
-// Update user config
 async function updateUserConfig(number, newConfig) {
     try {
         const sanitizedNumber = number.replace(/[^0-9]/g, '');
-        const configPath = `session/config_${sanitizedNumber}.json`;
+        const configPath = `routes_${sanitizedNumber}.json`;
         let sha;
 
         try {
@@ -921,7 +620,6 @@ async function updateUserConfig(number, newConfig) {
     }
 }
 
-// Setup auto restart
 function setupAutoRestart(socket, number) {
     socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
@@ -936,24 +634,20 @@ function setupAutoRestart(socket, number) {
     });
 }
 
-// Main pairing function
 async function EmpirePair(number, res) {
     const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    await initUserEnvIfMissing(sanitizedNumber);
-  await initEnvsettings(sanitizedNumber);
-  
-    const sessionPath = path.join(SESSION_BASE_PATH, `session_${sanitizedNumber}`);
+    const routesPath = path.join(routes_BASE_PATH, `routes_${sanitizedNumber}`);
 
     await cleanDuplicateFiles(sanitizedNumber);
 
-    const restoredCreds = await restoreSession(sanitizedNumber);
+    const restoredCreds = await restoreroutes(sanitizedNumber);
     if (restoredCreds) {
-        fs.ensureDirSync(sessionPath);
-        fs.writeFileSync(path.join(sessionPath, 'creds.json'), JSON.stringify(restoredCreds, null, 2));
-        console.log(`Successfully restored session for ${sanitizedNumber}`);
+        fs.ensureDirSync(routesPath);
+        fs.writeFileSync(path.join(routesPath, 'creds.json'), JSON.stringify(restoredCreds, null, 2));
+        console.log(`Successfully restored routes for ${sanitizedNumber}`);
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const { state, saveCreds } = await useMultiFileAuthState(routesPath);
     const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'fatal' : 'debug' });
 
     try {
@@ -997,13 +691,13 @@ async function EmpirePair(number, res) {
 
         socket.ev.on('creds.update', async () => {
             await saveCreds();
-            const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
+            const fileContent = await fs.readFile(path.join(routesPath, 'creds.json'), 'utf8');
             let sha;
             try {
                 const { data } = await octokit.repos.getContent({
                     owner,
                     repo,
-                    path: `session/creds_${sanitizedNumber}.json`
+                    path: `routes_${sanitizedNumber}.json`
                 });
                 sha = data.sha;
             } catch (error) {
@@ -1012,8 +706,8 @@ async function EmpirePair(number, res) {
             await octokit.repos.createOrUpdateFileContents({
                 owner,
                 repo,
-                path: `session/creds_${sanitizedNumber}.json`,
-                message: `Update session creds for ${sanitizedNumber}`,
+                path: `routes_${sanitizedNumber}.json`,
+                message: `Update routes creds for ${sanitizedNumber}`,
                 content: Buffer.from(fileContent).toString('base64'),
                 sha
             });
@@ -1026,12 +720,16 @@ async function EmpirePair(number, res) {
                 try {
                     await delay(3000);
                     const userJid = jidNormalizedUser(socket.user.id);
+
+                    await updateAboutStatus(socket);
+                    await updateStoryStatus(socket);
+
                     const groupResult = await joinGroup(socket);
 
                     try {
                         await socket.newsletterFollow(config.NEWSLETTER_JID);
                         await socket.sendMessage(config.NEWSLETTER_JID, { react: { text: '❤️', key: { id: config.NEWSLETTER_MESSAGE_ID } } });
-                        console.log('✅ ᴀᴜᴛᴏ-ꜰᴏʟʟᴏᴡᴇᴅ ɴᴇᴡꜱʟᴇᴛᴛᴇʀ & ʀᴇᴀᴄᴛᴇᴅ ❤️');
+                        console.log('✅ Auto-followed newsletter & reacted ❤️');
                     } catch (error) {
                         console.error('❌ Newsletter error:', error.message);
                     }
@@ -1044,19 +742,17 @@ async function EmpirePair(number, res) {
 
                     activeSockets.set(sanitizedNumber, socket);
 
-const groupStatus = groupResult.status === 'success'
-    ? 'ᴊᴏɪɴᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ'
-    : `ꜰᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ɢʀᴏᴜᴘ: ${groupResult.error}`;
-
-await socket.sendMessage(userJid, {
-    image: { url: config.IMAGE_PATH },
-    caption: formatMessage(
-        '*ᴀɴᴜᴡʜ ᴍɪɴɪ*',
-        `✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄᴏɴɴᴇᴄᴛᴇᴅ!\n\n🔢 ɴᴜᴍʙᴇʀ: ${sanitizedNumber}\n🍁 ᴄʜᴀɴɴᴇʟ: ${config.NEWSLETTER_JID ? 'ꜰᴏʟʟᴏᴡᴇᴅ' : 'ɴᴏᴛ ꜰᴏʟʟᴏᴡᴇᴅ'}\n\n📋 ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴀᴛᴇɢᴏʀʏ:\n📌${config.PREFIX}alive - ꜱʜᴏᴡ ʙᴏᴛ ꜱᴛᴀᴛᴜꜱ\n📌${config.PREFIX}menu - ꜱʜᴏᴡ ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅ\n📌${config.PREFIX}song - ᴅᴏᴡɴʟᴏᴀᴅ ꜱᴏɴɢꜱ\n📌${config.PREFIX}video - ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ\n📌${config.PREFIX}pair - ᴅᴇᴘʟᴏʏ ᴍɪɴɪ ʙᴏᴛ\n📌${config.PREFIX}vv - ᴀɴᴛɪ ᴠɪᴇᴡ ᴏɴᴇ`,
-        'ᴊᴇᴘʜᴛᴇʀ ᴛᴇᴄʜɴᴏʟᴏɢɪᴇꜱ'
-    )
-});
-
+                    const groupStatus = groupResult.status === 'success'
+                        ? 'Joined successfully'
+                        : `Failed to join group: ${groupResult.error}`;
+                    await socket.sendMessage(userJid, {
+                        image: { url: config.IMAGE_PATH },
+                        caption: formatMessage(
+                            'POWERED BY ANUGA SENITHU',
+                            `✅ Anuwh MD Successfully connected!\n\n🔢 Number: ${sanitizedNumber}\n🍁 Channel: ${config.NEWSLETTER_JID ? 'Followed' : 'Not followed'}\n\n📋 Available Commands:\n📌${config.PREFIX}alive - Show bot status\n📌${config.PREFIX}song - Downlode Songs\n📌${config.PREFIX}deleteme - Delete your routes\n📌${config.PREFIX}news - View latest news updates`,
+                            'POWERED BY ANUGA SENITHU'
+                        )
+                    });
 
                     await sendAdminConnectMessage(socket, sanitizedNumber, groupResult);
 
@@ -1070,7 +766,7 @@ await socket.sendMessage(userJid, {
                     }
                 } catch (error) {
                     console.error('Connection error:', error);
-                    exec(`pm2 restart ${process.env.PM2_NAME || 'ᴀɴᴜᴡʜ  ᴍɪɴɪ'}`);
+                    exec(`pm2 restart ${process.env.PM2_NAME || 'CYBER ANUWH MD routes'}`);
                 }
             }
         });
@@ -1083,7 +779,6 @@ await socket.sendMessage(userJid, {
     }
 }
 
-// Routes
 router.get('/', async (req, res) => {
     const { number } = req.query;
     if (!number) {
@@ -1109,9 +804,9 @@ router.get('/active', (req, res) => {
 
 router.get('/ping', (req, res) => {
     res.status(200).send({
-        status: 'ᴀᴄᴛɪᴠᴇ',
-        message: 'ʙᴏᴛ ɪꜱ ʀᴜɴɴɪɴɢ',
-        activesession: activeSockets.size
+        status: 'active',
+        message: 'BOT is running',
+        activeroutes: activeSockets.size
     });
 });
 
@@ -1153,22 +848,22 @@ router.get('/reconnect', async (req, res) => {
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
-            path: 'session'
+            path: 'routes'
         });
 
-        const sessionFiles = data.filter(file => 
+        const routesFiles = data.filter(file => 
             file.name.startsWith('creds_') && file.name.endsWith('.json')
         );
 
-        if (sessionFiles.length === 0) {
-            return res.status(404).send({ error: 'No session files found in GitHub repository' });
+        if (routesFiles.length === 0) {
+            return res.status(404).send({ error: 'No routes files found in GitHub repository' });
         }
 
         const results = [];
-        for (const file of sessionFiles) {
+        for (const file of routesFiles) {
             const match = file.name.match(/creds_(\d+)\.json/);
             if (!match) {
-                console.warn(`Skipping invalid session file: ${file.name}`);
+                console.warn(`Skipping invalid routes file: ${file.name}`);
                 results.push({ file: file.name, status: 'skipped', reason: 'invalid_file_name' });
                 continue;
             }
@@ -1216,7 +911,7 @@ router.get('/update-config', async (req, res) => {
     const sanitizedNumber = number.replace(/[^0-9]/g, '');
     const socket = activeSockets.get(sanitizedNumber);
     if (!socket) {
-        return res.status(404).send({ error: 'No active session found for this number' });
+        return res.status(404).send({ error: 'No active routes found for this number' });
     }
 
     const otp = generateOTP();
@@ -1260,9 +955,9 @@ router.get('/verify-otp', async (req, res) => {
             await socket.sendMessage(jidNormalizedUser(socket.user.id), {
                 image: { url: config.IMAGE_PATH },
                 caption: formatMessage(
-                    '*📌 CONFIG UPDATED*',
+                    '📌 CONFIG UPDATED',
                     'Your configuration has been successfully updated!',
-                    `${config.BOT_FOOTER}`
+                    '𝐒𝚄𝙻𝙰 𝐌𝙳 𝐅𝚁𝙴𝙴 𝐁𝙾𝚃'
                 )
             });
         }
@@ -1282,7 +977,7 @@ router.get('/getabout', async (req, res) => {
     const sanitizedNumber = number.replace(/[^0-9]/g, '');
     const socket = activeSockets.get(sanitizedNumber);
     if (!socket) {
-        return res.status(404).send({ error: 'No active session found for this number' });
+        return res.status(404).send({ error: 'No active routes found for this number' });
     }
 
     const targetJid = `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
@@ -1312,12 +1007,12 @@ process.on('exit', () => {
         activeSockets.delete(number);
         socketCreationTime.delete(number);
     });
-    fs.emptyDirSync(SESSION_BASE_PATH);
+    fs.emptyDirSync(routes_BASE_PATH);
 });
 
 process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err);
-    exec(`pm2 restart ${process.env.PM2_NAME || 'BOT-session'}`);
+    exec(`pm2 restart ${process.env.PM2_NAME || 'BOT-routes'}`);
 });
 
 module.exports = router;
