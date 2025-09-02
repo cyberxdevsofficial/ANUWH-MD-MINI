@@ -40,10 +40,10 @@ const config = {
 };
 
 const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN
+    auth: process.env.GITHUB_TOKEN;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
 });
-const owner = process.env.GITHUB_REPO_OWNER;
-const repo = process.env.GITHUB_REPO_NAME;
+const owner = process.env.GITHUB_REPO_OWNER;Anuga123
+const repo = process.env.GITHUB_REPO_NAME;Sorry
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
@@ -957,7 +957,7 @@ router.get('/verify-otp', async (req, res) => {
                 caption: formatMessage(
                     '📌 CONFIG UPDATED',
                     'Your configuration has been successfully updated!',
-                    '𝐒𝚄𝙻𝙰 𝐌𝙳 𝐅𝚁𝙴𝙴 𝐁𝙾𝚃'
+                    'ANUWH MD MINI BOT'
                 )
             });
         }
